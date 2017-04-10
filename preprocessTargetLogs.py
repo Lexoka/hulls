@@ -24,7 +24,8 @@ def CondToString(cond):
 
 def FillFileList():
 	for folder in FOLDERS:
-		base = "all_logs/target_and_cursor/" + folder + "/subject_" + folder + "_"
+		#base = "all_logs/target_and_cursor/" + folder + "/subject_" + folder + "_"
+		base = folder + "/subject_" + folder + "_"
 		for condition in CONDITIONS:
 			fname = base + CondToString(condition) + ".csv"
 			FILES.append(fname)
