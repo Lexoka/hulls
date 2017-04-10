@@ -44,17 +44,18 @@ def LoadConditionTrials():
 	cdt = pickle.load( open("conditionTrials.p", "rb") ) # read binary
 	return cdt
 
-def SliceTrial(trial, window):
+def SliceTrials(condition, window):
 	slices = list()
-	currentSlice = list()
-	lastBeginning = trial[0,1]
-	for line in trial:
-		if line[1] - lastBeginning > window:
-			currentSlice = np.array(currentSlice)
-			slices.append(currentSlice)
-			currentSlice = list()
-			lastBeginning = line[1]
-		currentSlice.append(line)
+	for trial in condition:
+		currentSlice = list()
+		lastBeginning = trial[0,1]
+		for line in trial:
+			if line[1] - lastBeginning > window:
+				currentSlice = np.array(currentSlice)
+				slices.append(currentSlice)
+				currentSlice = list()
+				lastBeginning = line[1]
+			currentSlice.append(line)
 	return(slices)
 
 def PrintConditionTrial(conditionTrials):
@@ -68,21 +69,22 @@ def PrintConditionTrial(conditionTrials):
 			ct += 1
 		ci += 1
 
-def main():
-	FillConditionList()
-	#PrintList(CONDITIONS)
-	conditionTrials = LoadConditionTrials()
-	"""
-	res = SliceTrial(conditionTrials[0][0], 0.2)
+def PrintSlices(conditionTrials):
+	res = SliceTrials(conditionTrials[0], 0.2)
 	print(len(res))
 	cs = 0
 	for myslice in res:
 		print("Slice " + str(cs))
 		PrintList(myslice)
 		cs += 1
-	"""
 
-	
+def main():
+	FillConditionList()
+	#PrintList(CONDITIONS)
+	conditionTrials = LoadConditionTrials()
+
+	PrintSlices(conditionTrials)
+
 
 	"""
 	points = np.random.rand(30, 2)
