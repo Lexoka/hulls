@@ -12,9 +12,9 @@ FOLDERS				= list()
 FILES				= list()
 
 def FillConditionList():
-	for angle in ANGLES:
-		for frequency in FREQUENCIES:
-			for speed in SPEEDS:
+	for speed in SPEEDS:
+		for angle in ANGLES:
+			for frequency in FREQUENCIES:
 				CONDITIONS.append((angle, frequency, speed))
 				CONDITION_TRIALS.append([])
 

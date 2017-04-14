@@ -3,12 +3,15 @@
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+import scipy.stats
 from scipy.spatial import ConvexHull
+
 
 ANGLES				= [0, 30, 60, 90, 120, 180]
 FREQUENCIES			= [1, 2, 4, 8, 13, 20, 30]
 SPEEDS				= [0.73, 1.46, 2.19]
 CONDITIONS			= list()
+WINDOWS				= [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
 
 """
 	conditionTrials:
@@ -31,9 +34,9 @@ CONDITIONS			= list()
 """
 
 def FillConditionList():
-	for angle in ANGLES:
-		for frequency in FREQUENCIES:
-			for speed in SPEEDS:
+	for speed in SPEEDS:
+		for angle in ANGLES:
+			for frequency in FREQUENCIES:
 				CONDITIONS.append((angle, frequency, speed))
 
 def PrintList(ml):
@@ -106,8 +109,8 @@ def GetConditionHullAreas(condition):
 		sl += 1
 	return(conditionAreas)
 
-
-
+# Sometimes there are slices for which all values of X or Y may be equal, which
+# boils down to a unidimensional space. This removes those slices.
 def CullSlices(allSlices):
 	newSlices = list()
 	for condition in allSlices:
@@ -134,6 +137,7 @@ def Test(condition):
 	hull = ConvexHull(points)
 	print(hull.area)
 
+# Get all areas, i.e., for all slices.
 def GetAllAreas(allSlices):
 	allAreas = list()
 	cd = 1
@@ -143,6 +147,17 @@ def GetAllAreas(allSlices):
 		cd += 1
 	return(allAreas)
 
+def GetAverageAreas(allAreas):
+	averageAreas = list()
+	averageStds = list()
+	for condition in allAreas:
+		average = np.mean(condition)
+		std = np.std(condition)
+		averageAreas.append(average)
+		averageStds.append(std)
+	return(averageAreas, averageStds)
+
+
 def PrintAreas(allAreas):
 	cd = 1
 	for condition in allAreas:
@@ -151,20 +166,41 @@ def PrintAreas(allAreas):
 			print(area)
 		cd += 1
 
+def WriteAverageAreas(averageAreas, window):
+	fname = "areas_" + str(window) + ".txt"
+	with open(fname, "w") as outfile:
+		for area in averageAreas:
+			outfile.write(str(area) + "\n")
+
+
+def ReadTimes():
+	with open("average_results_all_speeds.csv", "r") as infile:
+		contents = list()
+		for line in infile:
+			spLine = line.split(",")
+			#spLine = line
+			if spLine[0][0] != "#":
+				contents.append(float(spLine[3]))
+		#PrintList(contents)
+	return(contents)
+
 def main():
+	selTimes = ReadTimes()
+	#print(selTimes)
 	FillConditionList()
-	#PrintList(CONDITIONS)
 	conditionTrials = LoadConditionTrials()
-	allSlices = GetAllSlices(conditionTrials, 0.2)
-	#PrintAllSlices(allSlices)
-	#print(len(allSlices))
-	allSlices = CullSlices(allSlices)
-	#print(len(allSlices))
 
-	#GetConditionHullAreas(allSlices[26])
+	for window in WINDOWS:
+		allSlices = GetAllSlices(conditionTrials, window)
+		allSlices = CullSlices(allSlices)
+		allAreas = GetAllAreas(allSlices)
+		averageAreas, averageStds = GetAverageAreas(allAreas)
+		WriteAverageAreas(averageAreas, window)
+		print("Pearson for " + str(window))
+		print(scipy.stats.pearsonr(selTimes, averageAreas))
+		print("")
 
-	allAreas = GetAllAreas(allSlices)
-	PrintAreas(allAreas)
+
 
 
 	"""
