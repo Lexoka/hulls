@@ -58,6 +58,12 @@ def SliceTrials(condition, window):
 			currentSlice.append(line)
 	return(slices)
 
+def GetAllSlices(conditionTrials, window):
+	allSlices = list()
+	for condition in conditionTrials:
+		allSlices.append(SliceTrials(condition, window))
+	return(allSlices)
+
 def PrintConditionTrial(conditionTrials):
 	ci = 1
 	for condition in conditionTrials:
@@ -69,21 +75,96 @@ def PrintConditionTrial(conditionTrials):
 			ct += 1
 		ci += 1
 
-def PrintSlices(conditionTrials):
-	res = SliceTrials(conditionTrials[0], 0.2)
-	print(len(res))
+def PrintSlices(slices):
 	cs = 0
-	for myslice in res:
+	for mySlice in slices:
 		print("Slice " + str(cs))
-		PrintList(myslice)
+		PrintList(mySlice)
 		cs += 1
+
+def PrintAllSlices(allSlices):
+	cd = 1
+	for conditionSlices in allSlices:
+		print("Condition " + str(cd))
+		PrintSlices(conditionSlices)
+		cd += 1
+
+def PlotPoints(points):
+	plt.plot(points[:,0], points[:,1], 'o')
+	for simplex in hull.simplices:
+		plt.plot(points[simplex, 0], points[simplex, 1], 'r-')
+	plt.show()
+
+def GetConditionHullAreas(condition):
+	conditionAreas = list()
+	sl = 1
+	for mySlice in condition:
+		points = mySlice[:,-2:]
+		#print(points)
+		hull = ConvexHull(points)
+		conditionAreas.append(hull.area)
+		sl += 1
+	return(conditionAreas)
+
+
+
+def CullSlices(allSlices):
+	newSlices = list()
+	for condition in allSlices:
+		conditionSlices = list()
+		for mySlice in condition:
+			newX = False
+			newY = False
+			firstX = mySlice[0, -2]
+			firstY = mySlice[0, -1]
+			for line in mySlice:
+				if firstX != line[-2]:
+					newX = True
+				if firstY != line[-1]:
+					newY = True
+			if newX and newY:
+				conditionSlices.append(mySlice)
+		newSlices.append(conditionSlices)
+	return(newSlices)
+
+def Test(condition):
+	mySlice = condition[60]
+	points = mySlice[:,-2:]
+	print(points)
+	hull = ConvexHull(points)
+	print(hull.area)
+
+def GetAllAreas(allSlices):
+	allAreas = list()
+	cd = 1
+	for condition in allSlices:
+		#print("Condition " + str(cd))
+		allAreas.append(GetConditionHullAreas(condition))
+		cd += 1
+	return(allAreas)
+
+def PrintAreas(allAreas):
+	cd = 1
+	for condition in allAreas:
+		print("Condition " + str(cd))
+		for area in condition:
+			print(area)
+		cd += 1
 
 def main():
 	FillConditionList()
 	#PrintList(CONDITIONS)
 	conditionTrials = LoadConditionTrials()
+	allSlices = GetAllSlices(conditionTrials, 0.2)
+	#PrintAllSlices(allSlices)
+	#print(len(allSlices))
+	allSlices = CullSlices(allSlices)
+	#print(len(allSlices))
 
-	PrintSlices(conditionTrials)
+	#GetConditionHullAreas(allSlices[26])
+
+	allAreas = GetAllAreas(allSlices)
+	PrintAreas(allAreas)
 
 
 	"""

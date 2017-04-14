@@ -47,7 +47,8 @@ def ReadFile(filename):
 		for i in range(len(content)):
 			content[i] = content[i].split()
 			#content[i] = content[i][:9]					# removing text messages at the end
-			content[i] = content[i][0:2] + content[i][6:8]	# only keep trial + time + tX + tY
+			#content[i] = content[i][0:2] + content[i][6:8]	# only keep trial + time + tX + tY
+			content[i] = content[i][0:2] + content[i][8:10]	# only keep trial + time + tXnorm + tYnorm
 			content[i] = list(map(float, content[i]))
 	npConverted = np.array(content)
 	return(npConverted)
