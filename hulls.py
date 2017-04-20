@@ -11,7 +11,11 @@ ANGLES				= [0, 30, 60, 90, 120, 180]
 FREQUENCIES			= [1, 2, 4, 8, 13, 20, 30]
 SPEEDS				= [0.73, 1.46, 2.19]
 CONDITIONS			= list()
-WINDOWS				= [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
+WINDOWS				= [0.1, 0.15, 0.18, 0.19, 0.2, 0.21, 0.215, 0.22, 0.225, 0.23, 0.25, 0.3, 0.4, 0.6, 0.8]
+WINDOWS				= [0.1, 0.2, 0.3, 0.4, 0.5]
+WINDOWS				= [0.3, 0.7, 1.0]
+DIAMETER			= 0.045245078
+HDIAM				= DIAMETER/2.0
 
 """
 	conditionTrials:
@@ -38,6 +42,7 @@ def FillConditionList():
 		for angle in ANGLES:
 			for frequency in FREQUENCIES:
 				CONDITIONS.append((angle, frequency, speed))
+				#print(angle, frequency, speed)
 
 def PrintList(ml):
 	for elt in ml:
@@ -82,6 +87,7 @@ def PrintSlices(slices):
 	cs = 0
 	for mySlice in slices:
 		print("Slice " + str(cs))
+		print(mySlice[-1,1] - mySlice[0,1])
 		PrintList(mySlice)
 		cs += 1
 
@@ -92,20 +98,43 @@ def PrintAllSlices(allSlices):
 		PrintSlices(conditionSlices)
 		cd += 1
 
-def PlotPoints(points):
+def PlotPoints(points, hull):
 	plt.plot(points[:,0], points[:,1], 'o')
 	for simplex in hull.simplices:
 		plt.plot(points[simplex, 0], points[simplex, 1], 'r-')
 	plt.show()
 
-def GetConditionHullAreas(condition):
+def SquarePoints(points):
+	sqPoints = np.zeros((4*len(points), 2))
+	i = 0
+	for point in points:
+		x,y = point
+		lx = x - HDIAM
+		rx = x + HDIAM
+		by = y - HDIAM
+		ty = y + HDIAM
+
+		sqPoints[i]		= (lx, by)
+		sqPoints[i+1]	= (lx, ty)
+		sqPoints[i+2]	= (rx, by)
+		sqPoints[i+3]	= (rx, ty)
+		i += 4
+
+	return(sqPoints)
+
+def GetConditionHullAreas(condition, show, squarize = False):
 	conditionAreas = list()
 	sl = 1
 	for mySlice in condition:
 		points = mySlice[:,-2:]
-		#print(points)
+		if squarize:
+			points = SquarePoints(points)
 		hull = ConvexHull(points)
 		conditionAreas.append(hull.area)
+		#print(hull.area)
+		if show:
+			PlotPoints(points, hull)
+
 		sl += 1
 	return(conditionAreas)
 
@@ -143,7 +172,8 @@ def GetAllAreas(allSlices):
 	cd = 1
 	for condition in allSlices:
 		#print("Condition " + str(cd))
-		allAreas.append(GetConditionHullAreas(condition))
+		#allAreas.append(GetConditionHullAreas(condition, cd == 94))
+		allAreas.append(GetConditionHullAreas(condition, False, False))
 		cd += 1
 	return(allAreas)
 
@@ -172,6 +202,16 @@ def WriteAverageAreas(averageAreas, window):
 		for area in averageAreas:
 			outfile.write(str(area) + "\n")
 
+def WriteAllAreas(allAreas, window):
+	fname = "areas_all_" + str(window) + ".txt"
+	with open(fname, "w") as outfile:
+		cd = 1
+		for condition in allAreas:
+			outfile.write("Condition " + str(cd) + ":\n")
+			cd += 1
+			for area in condition:
+				outfile.write(str(area) + "\n")
+
 
 def ReadTimes():
 	with open("average_results_all_speeds.csv", "r") as infile:
@@ -185,26 +225,45 @@ def ReadTimes():
 	return(contents)
 
 def main():
+
 	selTimes = ReadTimes()
 	#print(selTimes)
 	FillConditionList()
 	conditionTrials = LoadConditionTrials()
 
+	lastThird = int(len(selTimes)/3)
+	#print(lastThird)
 	for window in WINDOWS:
 		allSlices = GetAllSlices(conditionTrials, window)
+		allSlices = CullSlices(allSlices)
+		#PrintAllSlices(allSlices)
+		allAreas = GetAllAreas(allSlices)
+		averageAreas, averageStds = GetAverageAreas(allAreas)
+		WriteAllAreas(allAreas, window)
+		WriteAverageAreas(averageAreas, window)
+
+		"""
 		allSlices = CullSlices(allSlices)
 		allAreas = GetAllAreas(allSlices)
 		averageAreas, averageStds = GetAverageAreas(allAreas)
 		WriteAverageAreas(averageAreas, window)
 		print("Pearson for " + str(window))
 		print(scipy.stats.pearsonr(selTimes, averageAreas))
+		#print(scipy.stats.pearsonr(selTimes[-lastThird:], averageAreas[-lastThird:]))
+		#print(scipy.stats.pearsonr(selTimes[lastThird:], averageAreas[lastThird:]))
 		print("")
-
+		"""
 
 
 
 	"""
 	points = np.random.rand(30, 2)
+	print(points)
+	print("")
+	SquarePoints(points)
+	"""
+
+	"""
 	hull = ConvexHull(points)
 	#print(points)
 	plt.plot(points[:,0], points[:,1], 'o')

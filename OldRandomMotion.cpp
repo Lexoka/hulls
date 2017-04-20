@@ -167,7 +167,7 @@ void CreateConditionSet() {
 		v_conditions.insert(v_conditions.begin(), NB_STATIC_CONDITIONS, glm::vec3(1,1,0));
 
 	for(unsigned int i=0; i<v_conditions.size(); ++i)
-		cout << "Condition " << i << ": " << v_conditions[i].x << ", " << v_conditions[i].y << ", " << v_conditions[i].z << endl;   
+		cout << "Condition " << i << ": " << v_conditions[i].x << ", " << v_conditions[i].y << ", " << v_conditions[i].z << endl;
 }
 
 void ReadNBTargets(){ // And number!
@@ -186,11 +186,11 @@ void ReadNBTargets(){ // And number!
 	}
 	else {
 		if(threeDimensional)
-			cout << "Unable to open file parameters3d.txt." << endl; 
+			cout << "Unable to open file parameters3d.txt." << endl;
 		else
-			cout << "Unable to open file parameters.txt." << endl; 
-		cout << "You might be in the wrong directory. Good luck figuring it out." << endl; 
-	}       
+			cout << "Unable to open file parameters.txt." << endl;
+		cout << "You might be in the wrong directory. Good luck figuring it out." << endl;
+	}
 }
 
 float RandomFloat(float a, float b) {
@@ -214,21 +214,7 @@ void InitTargets2D(float* targets) {
 	}
 }
 
-void InitTargets3D(float* targets) {
-	float x, y, z;
-	//cout << "NB TARGETS:  " << CHOSEN_NB_TARGETS_2D << endl;
-	for(int i=0; i<CHOSEN_NB_TARGETS_2D; ++i) {
-		x = RandomFloat(XSTART, XEND);
-		y = RandomFloat(YSTART, YEND);
-		z = RandomFloat(ZSTART3D, ZEND);
-		targets[3*i]        = x;
-		targets[3*i + 1]    = y;
-		targets[3*i + 2]    = z;
-		//cout << x << "    " << y << " " << z << endl;
-		if(isnan(x) || isnan(y) || isnan(z))
-			cout << "INIT!INIT!INIT!INIT!INIT! NAN!NAN!NAN!NAN!NAN!NAN!NAN!NAN!NAN!NAN!:    " << x << " " << y << " " << z << endl;
-	}
-}
+
 
 void InitDirections2D(float* directions) {
 	float vx, vy;
@@ -239,19 +225,6 @@ void InitDirections2D(float* directions) {
 		directions[3*i]     = vx;
 		directions[3*i + 1] = vy;
 		// Nothing for 3*i + 2, since there's no movement on the Z axis
-	}
-}
-
-void InitDirections3D(float* directions) {
-	float vx, vy, vz;
-	for(int i=0; i<CHOSEN_NB_TARGETS_2D; ++i) {
-		// vx and vy are random floats between -1.0f and +1.0f
-		vx = RandomFloat(-1.0f, 1.0f);
-		vy = RandomFloat(-1.0f, 1.0f);
-		vz = RandomFloat(-1.0f, 1.0f);
-		directions[3*i]     = vx;
-		directions[3*i + 1] = vy;
-		directions[3*i + 2] = vz;
 	}
 }
 
@@ -273,25 +246,7 @@ void NormalizeDirections2D(float* directions) {
 	}
 }
 
-void NormalizeDirections3D(float* directions) {
-	float x, y, z, length;
-	for(int i=0; i<CHOSEN_NB_TARGETS_2D; i++) {
-		x = directions[3*i];
-		y = directions[3*i + 1];
-		z = directions[3*i + 2];
-		length = sqrt(x*x + y*y + z*z);
-		if(length != 0.0f) {
-			directions[3*i]     = x/length;
-			directions[3*i + 1] = y/length;
-			directions[3*i + 2] = z/length;
-		} else {
-			directions[3*i]     = 1.0f;
-			directions[3*i + 1] = 1.0f;
-			directions[3*i + 2] = 1.0f;
-			cerr << "Nil direction found; set to (1.0,1.0)." << endl;
-		}
-	}
-}
+
 
 void DisplayTargets2D(float* targets) {
 	for(int i=0; i<CHOSEN_NB_TARGETS_2D; ++i) {
@@ -374,7 +329,7 @@ void MoveTargets2D(float* targets, double deltaT, float* directions, int current
 			targets[3*i] -= bump;
 			directions[3*i] = -abs(directions[3*i]);
 		}
-		
+
 		if(yBelow) {
 			targets[3*i + 1] += bump;
 			directions[3*i + 1] = abs(directions[3*i + 1]);
@@ -447,34 +402,7 @@ void Bounce3D(float* targets, double deltaT, float* directions, int i) {
 }
 
 
-void MoveTargets3D(float* targets, double deltaT, float* directions) {
-	for(int i=0; i<CHOSEN_NB_TARGETS_2D; ++i) {
-		targets[3*i]        += SPEED_2D * deltaT * directions[3*i];         // X
-		targets[3*i + 1]    += SPEED_2D * deltaT * directions[3*i + 1];     // Y
-		targets[3*i + 2]    += SPEED_2D * deltaT * directions[3*i + 2];     // Z
-
-		//Bounce3D(targets, deltaT, directions, i);
-	}
-	//cout << targets[0] << endl;
-}
-
-/*
-// Hypnotic version
-void RotateDirections2D(float* directions, double deltaT) {
-	float angle, dx, dy, cosa, sina;
-	angle = 0.00005f;
-	for(int i=0; i<NB_TARGETS_2D; ++i) {
-		dx = directions[3*i];
-		dy = directions[3*i + 1];
-		cosa = cos(angle);
-		sina = sin(angle);
-		directions[3*i]     = dx*cosa - dy*sina;
-		directions[3*i + 1] = dx*sina + dy*cosa;
-	}
-}
-*/
-
-glm::vec4 QuatMult(glm::vec4 q1, glm::vec4 q2) { 
+glm::vec4 QuatMult(glm::vec4 q1, glm::vec4 q2) {
 	glm::vec4 qr;
 	qr.x = (q1.w * q2.x) + (q1.x * q2.w) + (q1.y * q2.z) - (q1.z * q2.y);
 	qr.y = (q1.w * q2.y) - (q1.x * q2.z) + (q1.y * q2.w) + (q1.z * q2.x);
@@ -484,8 +412,8 @@ glm::vec4 QuatMult(glm::vec4 q1, glm::vec4 q2) {
 	return qr;
 }
 
-glm::vec4 QuatConjugate(glm::vec4 q) { 
-	return glm::vec4(-q.x, -q.y, -q.z, q.w); 
+glm::vec4 QuatConjugate(glm::vec4 q) {
+	return glm::vec4(-q.x, -q.y, -q.z, q.w);
 }
 
 
@@ -547,43 +475,6 @@ glm::vec4 AxisToQuat(glm::vec3 axis, float angle) {
 	return(q);
 }
 
-
-void PeriodicRotateDirections3D(float* directions) {
-	// The angle should end up between range min and max.
-	float a, b, c;
-	glm::vec4 qResult, qDir, qRotArb, qConjArb;
-	glm::vec3 rotAxis;
-	float angle;
-	//cout << "Current angle:   " << angle << endl;
-	float half;
-	
-	
-	for(int i=0; i<CHOSEN_NB_TARGETS_2D; ++i) {
-		// The angle should end up between range min and max.
-		a = directions[3*i];
-		b = directions[3*i + 1];
-		c = directions[3*i + 2];
-		if(isnan(a) || isnan(b) || isnan(c)) {
-			cout << "From directions float array: NAN!" << endl;
-			cout << a << "  " << b << " " << c << endl;
-		}
-		angle = RANGE_MIN + static_cast <float> (rand()) / (static_cast <float> ( RAND_MAX/(RANGE_MAX-RANGE_MIN) ) );
-		half = angle*0.5f;
-		rotAxis = FindOrthogonalVector(a,b,c);      // Random, normalized vector orthogonal to current direction
-
-		qDir = glm::vec4(a,b,c,0);                  // Current direction as quaternion
-		qRotArb = AxisToQuat(rotAxis, angle);       // Rotation quaternion from rotation axis and angle
-		qConjArb = QuatConjugate(qRotArb);          // Conjugate of rotation quaternion
-		qResult = QuatMult(qRotArb, qDir);          // Multiply rotation by direction
-		qResult = QuatMult(qResult, qConjArb);      // Multiply result by conjugate of rotation quaternion
-
-		directions[3*i]     = float(qResult.x);
-		directions[3*i + 1] = float(qResult.y);
-		directions[3*i + 2] = float(qResult.z);
-	}
-}
-
-
 void LogNewCondition(ofstream* condSwitches, float* parameters) {
 	*condSwitches   << glfwGetTime() << "   New condition: " << parameters[0] << "  " << parameters[1] << " " << parameters[2] << endl;
 }
@@ -596,9 +487,9 @@ void UpdateParams(float* oldPar, float* newPar) {
 
 
 // Main loop. Moves the targets and sends them.
-//void Communicate(   MessageWrite msgPosOut, float* targets, float* directions, 
+//void Communicate(   MessageWrite msgPosOut, float* targets, float* directions,
 //					ModuleAPI* module, OutputPort* pOutPositions, InputPort* pInSpringIndex, InputPort* pInParams, ofstream* condSwitches) {
-void Communicate(   MessageWrite msgPosOut, float* targets, float* directions, 
+void Communicate(   MessageWrite msgPosOut, float* targets, float* directions,
 					ModuleAPI* module, OutputPort* pOutPositions, InputPort* pInSpringIndex, ofstream* condSwitches) {
 	double currentTime = glfwGetTime();
 	double prevTime = currentTime;
@@ -638,37 +529,6 @@ void Communicate(   MessageWrite msgPosOut, float* targets, float* directions,
 			}
 		}
 		++nbIterations;
-		
-		/*
-		module->get(pInSpringIndex, msgSpringIndex);
-		if(msgSpringIndex.data.getSize() > 0) {
-			springIndex = (int*) msgSpringIndex.data.readAccess();
-			if(springIndex != NULL) {
-				//cout << "SpringIndex message valid:   " << *springIndex << endl;
-				currentTarget = *springIndex;
-			}
-		}
-		*/
-
-		/*
-		module->get(pInParams, msgParams);
-		if(msgParams.data.getSize() > 0) {
-			//parameters = (float*) msgParams.data.readAccess();
-			memcpy(parameters, (float*) msgParams.data.readAccess(), msgParams.data.getSize());
-			msgParams.clear();
-			if(parameters != NULL) {
-				ANGLE               = parameters[0] / 180.0f;
-				//cout << "Read angle:  " << ANGLE << endl;
-				ROTATION_PERIOD     = parameters[1];
-				SPEED_2D            = parameters[2];
-				RANGE_MIN           = -M_PI * ANGLE;
-				RANGE_MAX           = M_PI  * ANGLE;
-				if(parameters[0] != oldParameters[0] || parameters[1] != oldParameters[1] || parameters[2] != oldParameters[2]) {
-					LogNewCondition(condSwitches, parameters);
-					UpdateParams(oldParameters, parameters);
-				}
-			}
-		}*/
 
 		ANGLE				= parameters[0] / 180.0f;
 		//cout << "Read angle:  " << ANGLE << endl;
@@ -676,7 +536,7 @@ void Communicate(   MessageWrite msgPosOut, float* targets, float* directions,
 		SPEED_2D			= parameters[2];
 		RANGE_MIN			= -M_PI * ANGLE;
 		RANGE_MAX			= M_PI  * ANGLE;
-		
+
 		if(threeDimensional)
 			MoveTargets3D(targets, deltaT, directions);
 		else
@@ -708,7 +568,7 @@ int main(int argc, char *argv[]) {
 		}
 	} else
 		cout << "2D only, sorry." << endl;
-	
+
 	glfwInit();
 
 	long int seed = (long int)glfwGetTime();
@@ -716,22 +576,14 @@ int main(int argc, char *argv[]) {
 	srand (static_cast <unsigned> (time(pSeed))); // Seeds the random number generator
 
 	ReadNBTargets();
-	//LogConditions();	
-
 	// Open in and out ports
 	OutputPort* pOutPositions	= new OutputPort("atomPos");
 	InputPort*  pInSpringIndex	= new InputPort("springIndex");
-	//InputPort*  pInParams		= new InputPort("params");
 	BufferPool* pool			= new BufferPool();
-	//pOutPositions->stamps->add(PosMsgStamp);
 	ModuleAPI* module = 0;
-	
+
 	vector<Port*> ports;
 	ports.push_back(pOutPositions);
-	//pInSpringIndex->setNonBlockingFlag(true);
-	//pInParams->setNonBlockingFlag(true);
-	//ports.push_back(pInSpringIndex);
-	//ports.push_back(pInParams);
 
 
 	// FlowVR initialization
@@ -741,8 +593,8 @@ int main(int argc, char *argv[]) {
 	if(module == NULL){
 		cerr << "Error: RandomMotion Module not initialized." << endl;
 		return -1;
-	}   
-	
+	}
+
 	msgPosOut.data = pool->alloc(module->getAllocator(),CHOSEN_NB_TARGETS_2D * 3 * sizeof(float));
 	float* positions = (float*) (msgPosOut.data.writeAccess());
 	float* directions = new float[CHOSEN_NB_TARGETS_2D * 3 * sizeof(float)];
@@ -750,7 +602,7 @@ int main(int argc, char *argv[]) {
 		InitTargets3D(positions);
 	else
 		InitTargets2D(positions);
-	
+
 	if(threeDimensional) {
 		InitDirections3D(directions);
 		NormalizeDirections3D(directions);
