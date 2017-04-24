@@ -76,10 +76,6 @@ def GetConditionHullAreas(condition, show, squarize = False):
 		points = mySlice[:,-2:]
 		if squarize:
 			points = SquarePoints(points)
-		#print(condition)
-		#PrintList(points)
-		#print("Length of points:", len(points))
-		#if (len(points) > 2 and not squarize) or (len(points) > 8 and squarize) :
 		if len(points) > 2:
 			hull = ConvexHull(points)
 			conditionAreas.append(hull.area)
@@ -88,7 +84,6 @@ def GetConditionHullAreas(condition, show, squarize = False):
 		else:
 			conditionAreas.append(0.0)
 		sl += 1
-	#print("conditionAreas: ", conditionAreas)
 	return(conditionAreas)
 
 def GetAllAreas(allSlices):
@@ -123,7 +118,6 @@ def ReadTimes():
 			#spLine = line
 			if spLine[0][0] != "#":
 				contents.append(float(spLine[3]))
-		#PrintList(contents)
 	return(contents)
 
 def GetAverageAreas(allAreas):
@@ -131,7 +125,6 @@ def GetAverageAreas(allAreas):
 	averageStds = list()
 	cd = 1
 	for condition in allAreas:
-		#print("Condition: ", cd, condition)
 		average = np.mean(condition)
 		std = np.std(condition)
 		averageAreas.append(average)
@@ -141,10 +134,8 @@ def GetAverageAreas(allAreas):
 
 def main():
 	selTimes = ReadTimes()
-	#print(selTimes)
 	FillConditionList()
 	trajectories = pickle.load( open("trajectories.p", "rb") ) # read binary
-	#PrintList(trajectories[0])
 
 	for window in WINDOWS:
 		allSlices = GetAllSlices(trajectories, window)
@@ -152,8 +143,6 @@ def main():
 		averageAreas, averageStds = GetAverageAreas(allAreas)
 		WriteAllAreas(allAreas, window)
 		WriteAverageAreas(averageAreas, window)
-
-
 
 if __name__ == "__main__":
 	main()
