@@ -340,67 +340,6 @@ void MoveTargets2D(float* targets, double deltaT, float* directions, int current
 	}
 }
 
-void Bounce3D(float* targets, double deltaT, float* directions, int i) {
-	float bump = 0.001f; // To make sure targets stay in the window and don't just skirt long the edge, right outside.
-	glm::vec3 offset = glm::vec3(targets[3*i], targets[3*i + 1], targets[3*i + 2]);
-	glm::vec4 pos = glm::vec4(targets[3*i],targets[3*i+1],targets[3*i+2],1.0f);
-
-	// Positions on the surface of the sphere.
-	glm::vec4 leftEdge = pos - xRadius;
-	glm::vec4 rightEdge = pos + xRadius;
-
-	glm::vec4 bottomEdge = pos - yRadius;
-	glm::vec4 topEdge = pos + yRadius;
-
-	glm::vec4 frontEdge = pos + zRadius;
-	glm::vec4 backEdge = pos - zRadius;
-
-	// Transforming them into clip space positions.
-	leftEdge    = frustumMatrix * leftEdge;
-	rightEdge   = frustumMatrix * rightEdge;
-
-	bottomEdge  = frustumMatrix * bottomEdge;
-	topEdge     = frustumMatrix * topEdge;
-
-	frontEdge   = frustumMatrix * frontEdge;
-	backEdge    = frustumMatrix * backEdge;
-
-	// I may not need to add/substract the little 0.0001f.
-	if(leftEdge.x < -leftEdge.w) {
-		targets[3*i] += bump;
-		directions[3*i] = abs(directions[3*i]);
-	}
-	else {
-		if(rightEdge.x > rightEdge.w) {
-			targets[3*i] -= bump;
-			directions[3*i] = -abs(directions[3*i]);
-		}
-	}
-
-	// Y
-	if(bottomEdge.y < -bottomEdge.w) {
-		targets[3*i + 1] += bump;
-		directions[3*i + 1] = abs(directions[3*i + 1]);
-	}
-	else {
-		if (topEdge.y > topEdge.w) {
-			targets[3*i + 1] -= bump;
-			directions[3*i + 1] = -abs(directions[3*i + 1]);
-		}
-	}
-
-	// Z
-	if(frontEdge.z <= 0.0f + CAMERA_MARGIN) {
-		targets[3*i + 2] -= bump;
-		directions[3*i + 2] = -abs(directions[3*i + 2]);
-	} else {
-		if (backEdge.z > backEdge.w) {
-			targets[3*i + 2] += bump;
-			directions[3*i + 2] = abs(directions[3*i + 2]);
-		}
-	}
-}
-
 
 glm::vec4 QuatMult(glm::vec4 q1, glm::vec4 q2) {
 	glm::vec4 qr;
