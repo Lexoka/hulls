@@ -11,7 +11,7 @@ FREQUENCIES			= [1, 2, 4, 8, 13, 20, 30]
 SPEEDS				= [0.73, 1.46, 2.19]
 CONDITIONS			= list()
 WINDOWS				= [0.5, 1.0]
-WINDOWS				= [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
+WINDOWS				= [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
 DIAMETER			= 0.045245078
 HDIAM				= DIAMETER/2.0
 
@@ -47,13 +47,30 @@ def GetAllSlices(trajectories, window):
 
 def PlotPoints(positions, hull):
 	positions = np.array(positions)
-	plt.axis("equal")		# Same scale on both axes, or screwed up perception of angles
+	#plt.axis("equal")		# Same scale on both axes, or screwed up perception of angles
 	plt.plot(positions[:,0], positions[:,1], 'o')
 	for simplex in hull.simplices:
 		plt.plot(positions[simplex, 0], positions[simplex, 1], 'r-')
 	plt.show()
 
+def SquareTimedPoints(points):
+	sqPoints = np.zeros((4*len(points), 3))
+	i = 0
+	for point in points:
+		t,x,y = point
+		lx = x - HDIAM
+		rx = x + HDIAM
+		by = y - HDIAM
+		ty = y + HDIAM
+		sqPoints[i]		= (t, lx, by)
+		sqPoints[i+1]	= (t, lx, ty)
+		sqPoints[i+2]	= (t, rx, by)
+		sqPoints[i+3]	= (t, rx, ty)
+		i += 4
+	return(sqPoints)
+
 def SquarePoints(points):
+	#print(points)
 	sqPoints = np.zeros((4*len(points), 2))
 	i = 0
 	for point in points:
@@ -69,6 +86,34 @@ def SquarePoints(points):
 		i += 4
 	return(sqPoints)
 
+def LinearTimedTrajectory(points):
+	#print(points)
+	if len(points) > 4:
+		A = points[0]
+		B = points[16]
+		C = points[128]
+
+		#print(A,B,C)
+
+		At, Ax, Ay = A
+		Bt, Bx, By = B
+		Ct, Cx, Cy = C
+
+		return(Ax * (By - Cy) + Bx * (Cy - Ay) + Cx * (Ay - By) < 0.0001)
+
+def LinearTrajectory(points):
+	#print(points)
+	A = points[0]
+	B = points[12]
+	C = points[24]
+	#print(A,B,C)
+
+	Ax, Ay = A
+	Bx, By = B
+	Cx, Cy = C
+
+	return(Ax * (By - Cy) + Bx * (Cy - Ay) + Cx * (Ay - By) < 0.0001)
+
 def GetConditionHullAreas(condition, show, squarize = False):
 	conditionAreas = list()
 	sl = 1
@@ -76,7 +121,20 @@ def GetConditionHullAreas(condition, show, squarize = False):
 		points = mySlice[:,-2:]
 		if squarize:
 			points = SquarePoints(points)
-		if len(points) > 2:
+		if LinearTrajectory(points):
+			bottomLeft = points[0]
+			topLeft = points[1]
+			btlX, btlY = bottomLeft
+
+			topRight = points[-1]
+			tprX, tprY = topRight
+
+			width = abs(tprX - btlX)
+			height = abs(tprY - btlY)
+			conditionAreas.append(width * height)
+			#conditionAreas.append(42.424242)
+		elif len(points) > 2:
+		#if not LinearTrajectory(points):
 			hull = ConvexHull(points)
 			conditionAreas.append(hull.area)
 			if show:
@@ -90,7 +148,7 @@ def GetAllAreas(allSlices):
 	allAreas = list()
 	cd = 1
 	for condition in allSlices:
-		allAreas.append(GetConditionHullAreas(condition, False, True))
+		allAreas.append(GetConditionHullAreas(condition, False, False))
 		cd += 1
 	return(allAreas)
 
@@ -125,6 +183,7 @@ def GetAverageAreas(allAreas):
 	averageStds = list()
 	cd = 1
 	for condition in allAreas:
+		print("Condition ", cd, condition)
 		average = np.mean(condition)
 		std = np.std(condition)
 		averageAreas.append(average)
@@ -137,12 +196,25 @@ def main():
 	FillConditionList()
 	trajectories = pickle.load( open("trajectories.p", "rb") ) # read binary
 
+	"""
+	for i in [0, 18]:
+		traj = SquarePoints(trajectories[i])
+		hull = ConvexHull(traj[:,1:])
+		PlotPoints(traj[:,1:], hull)
+		if LinearTrajectory(traj):
+			print(42.42)
+		else:
+			print(hull.area)
+	"""
+
+	#"""
 	for window in WINDOWS:
 		allSlices = GetAllSlices(trajectories, window)
 		allAreas = GetAllAreas(allSlices)
 		averageAreas, averageStds = GetAverageAreas(allAreas)
 		WriteAllAreas(allAreas, window)
 		WriteAverageAreas(averageAreas, window)
+	#"""
 
 if __name__ == "__main__":
 	main()

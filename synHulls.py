@@ -61,19 +61,21 @@ def MoveTargets2D(condition):
 	tDir = np.array((1.0, 0.0))
 	time = 0.0
 	period = 1.0/frequency # not safe if nil frequency
-	if angle == 0.0:
-		return( np.array( [[0.0, 0.0, 0.0], [END_OF_TIMES, period*speed, 0]] ) )
+	#if angle == 0.0:
+		#return( np.array( [[0.0, 0.0, 0.0], [END_OF_TIMES, END_OF_TIMES*speed, 0]] ) )
 	#print("period: ", period)
-	nbLines = int(END_OF_TIMES/period) #+ 1
+	deltaTime = 0.001 * frequency
+	nbLines = int(END_OF_TIMES/deltaTime) #+ 1
 	#print("nbLines: ", nbLines)
 	positions = np.zeros((nbLines, 3))
 	line = 1
+
 	while time < END_OF_TIMES and line < nbLines:
-		time += period
+		time += deltaTime
 		#print("tDir: ", tDir)
 		#print("period: ", period)
 		#print("speed: ", speed)
-		pos += tDir * period * speed
+		pos += tDir * deltaTime * speed
 		#print("pos: ", pos)
 		positions[line] = np.append(time, pos)
 		tDir = RotateDirections2D(tDir, angle)
@@ -111,8 +113,12 @@ def main():
 	trajectories = list()
 	#positions = MoveTargets2D((0.6, 10, 13))
 	#PrintList(positions)
+	cd = 1
 	for condition in CONDITIONS:
-		trajectories.append(MoveTargets2D(condition))
+		print("Processing condition ", cd, " out of ", len(CONDITIONS))
+		traj = MoveTargets2D(condition)
+		trajectories.append(traj)
+		cd += 1
 	pickle.dump(trajectories, open("trajectories.p", "wb")) # write binary
 	#PrintList(trajectories[0])
 	#PrintList(positions)
