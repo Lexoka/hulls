@@ -13,6 +13,7 @@ ANGLES			= [0, 30, 60, 90, 120, 180]
 FREQUENCIES		= [1, 2, 4, 8, 13, 20, 30]
 SPEEDS			= [0.73, 1.46, 2.19]
 CONDITIONS		= list()
+SMALLIFY		= True
 
 
 def FillConditionList():
@@ -64,13 +65,20 @@ def MoveTargets2D(condition):
 	#if angle == 0.0:
 		#return( np.array( [[0.0, 0.0, 0.0], [END_OF_TIMES, END_OF_TIMES*speed, 0]] ) )
 	#print("period: ", period)
-	deltaTime = 0.001 * frequency
-	nbLines = int(END_OF_TIMES/deltaTime) #+ 1
+	deltaTime = 0.0001
+	if SMALLIFY:
+		deltaTime *= 10
+		real_eot = END_OF_TIMES * 0.2
+		nbLines = int(real_eot/deltaTime)
+	else:
+		real_eot = END_OF_TIMES
+		nbLines = int(real_eot/deltaTime) #+ 1
+
 	#print("nbLines: ", nbLines)
 	positions = np.zeros((nbLines, 3))
 	line = 1
-
-	while time < END_OF_TIMES and line < nbLines:
+	lastRotation = 0.0
+	while time < real_eot and line < nbLines:
 		time += deltaTime
 		#print("tDir: ", tDir)
 		#print("period: ", period)
@@ -78,7 +86,9 @@ def MoveTargets2D(condition):
 		pos += tDir * deltaTime * speed
 		#print("pos: ", pos)
 		positions[line] = np.append(time, pos)
-		tDir = RotateDirections2D(tDir, angle)
+		if time - lastRotation >= period:
+			tDir = RotateDirections2D(tDir, angle)
+			lastRotation = time
 		#print("tDir and norm:", tDir, np.linalg.norm(tDir))
 		line += 1
 	return(positions)
@@ -119,7 +129,10 @@ def main():
 		traj = MoveTargets2D(condition)
 		trajectories.append(traj)
 		cd += 1
-	pickle.dump(trajectories, open("trajectories.p", "wb")) # write binary
+	if SMALLIFY:
+		pickle.dump(trajectories, open("mini_trajectories.p", "wb"))
+	else:
+		pickle.dump(trajectories, open("trajectories.p", "wb")) # write binary
 	#PrintList(trajectories[0])
 	#PrintList(positions)
 	#hull = ConvexHull(positions[:,1:])

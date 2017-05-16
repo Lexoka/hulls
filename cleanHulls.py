@@ -12,8 +12,13 @@ SPEEDS				= [0.73, 1.46, 2.19]
 CONDITIONS			= list()
 WINDOWS				= [0.5, 1.0]
 WINDOWS				= [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
+WINDOWS				= [1.0]
 DIAMETER			= 0.045245078
 HDIAM				= DIAMETER/2.0
+CUTOFF				= 4
+CUTTING				= False
+SMALLIFY			= False
+MAKE_SQUARE_POINTS	= True
 
 
 def FillConditionList():
@@ -41,8 +46,14 @@ def SliceCondition(condition, window):
 
 def GetAllSlices(trajectories, window):
 	allSlices = list()
+	cd = 1
 	for condition in trajectories:
+		print("GetAllSlices, slicing condition " + str(cd) + "...")
 		allSlices.append(SliceCondition(condition, window))
+		print("GetAllSlices, done slicing condition " + str(cd) + ".")
+		cd += 1
+		if CUTTING and cd == CUTOFF:
+			return(allSlices)
 	return(allSlices)
 
 def PlotPoints(positions, hull):
@@ -104,8 +115,8 @@ def LinearTimedTrajectory(points):
 def LinearTrajectory(points):
 	#print(points)
 	A = points[0]
-	B = points[12]
-	C = points[24]
+	B = points[int(len(points)/2)]
+	C = points[len(points) - 1]
 	#print(A,B,C)
 
 	Ax, Ay = A
@@ -114,33 +125,39 @@ def LinearTrajectory(points):
 
 	return(Ax * (By - Cy) + Bx * (Cy - Ay) + Cx * (Ay - By) < 0.0001)
 
-def GetConditionHullAreas(condition, show, squarize = False):
+def GetConditionHullAreas(condition, conditionParameters, show, squarize = False):
+	speed, angle, frequency = conditionParameters
 	conditionAreas = list()
 	sl = 1
 	for mySlice in condition:
 		points = mySlice[:,-2:]
-		if squarize:
-			points = SquarePoints(points)
-		if LinearTrajectory(points):
-			bottomLeft = points[0]
-			topLeft = points[1]
-			btlX, btlY = bottomLeft
-
-			topRight = points[-1]
-			tprX, tprY = topRight
-
-			width = abs(tprX - btlX)
-			height = abs(tprY - btlY)
-			conditionAreas.append(width * height)
-			#conditionAreas.append(42.424242)
-		elif len(points) > 2:
-		#if not LinearTrajectory(points):
-			hull = ConvexHull(points)
-			conditionAreas.append(hull.area)
-			if show:
-				PlotPoints(points, hull)
-		else:
+		if not squarize and angle == 0:
 			conditionAreas.append(0.0)
+		else:
+			isLinear = (angle == 0 or LinearTrajectory(points))
+			#print(angle == 0)
+			#print(LinearTrajectory(points))
+			#print(isLinear)
+			if squarize:
+				points = SquarePoints(points)
+			if isLinear:
+				#PrintList(points)
+				bottomLeft = points[0]
+				btlX, btlY = bottomLeft
+
+				topRight = points[-1]
+				tprX, tprY = topRight
+
+				width = abs(tprX - btlX)
+				height = abs(tprY - btlY)
+				conditionAreas.append(width * height)
+			else:
+				#print(conditionParameters)
+				#PrintList(points)
+				hull = ConvexHull(points)
+				conditionAreas.append(hull.area)
+				if show:
+					PlotPoints(points, hull)
 		sl += 1
 	return(conditionAreas)
 
@@ -148,8 +165,13 @@ def GetAllAreas(allSlices):
 	allAreas = list()
 	cd = 1
 	for condition in allSlices:
-		allAreas.append(GetConditionHullAreas(condition, False, False))
+		print("GetAllAreas, computing areas for condition " + str(cd) + "...")
+		conditionParameters = CONDITIONS[cd-1]
+		allAreas.append(GetConditionHullAreas(condition, conditionParameters, False, MAKE_SQUARE_POINTS))
+		print("GetAllAreas, done computing areas for condition " + str(cd) + ".")
 		cd += 1
+		if CUTTING and cd == CUTOFF:
+			return(allAreas)
 	return(allAreas)
 
 def WriteAverageAreas(averageAreas, window):
@@ -183,7 +205,7 @@ def GetAverageAreas(allAreas):
 	averageStds = list()
 	cd = 1
 	for condition in allAreas:
-		print("Condition ", cd, condition)
+		print("GetAverageAreas, averaging for condition " + str(cd) + "...")
 		average = np.mean(condition)
 		std = np.std(condition)
 		averageAreas.append(average)
@@ -194,7 +216,13 @@ def GetAverageAreas(allAreas):
 def main():
 	selTimes = ReadTimes()
 	FillConditionList()
-	trajectories = pickle.load( open("trajectories.p", "rb") ) # read binary
+	if SMALLIFY:
+		fname = "mini_trajectories.p"
+	else:
+		fname = "trajectories.p"
+	print("Loading", fname, "...")
+	trajectories = pickle.load( open(fname, "rb") ) # read binary
+	print(fname, "loaded.")
 
 	"""
 	for i in [0, 18]:
@@ -211,8 +239,10 @@ def main():
 	for window in WINDOWS:
 		allSlices = GetAllSlices(trajectories, window)
 		allAreas = GetAllAreas(allSlices)
+		print("Computing average areas...")
 		averageAreas, averageStds = GetAverageAreas(allAreas)
-		WriteAllAreas(allAreas, window)
+		#WriteAllAreas(allAreas, window)
+		print("Writing average areas...")
 		WriteAverageAreas(averageAreas, window)
 	#"""
 
