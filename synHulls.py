@@ -13,7 +13,7 @@ ANGLES			= [0, 30, 60, 90, 120, 180]
 FREQUENCIES		= [1, 2, 4, 8, 13, 20, 30]
 SPEEDS			= [0.73, 1.46, 2.19]
 CONDITIONS		= list()
-SMALLIFY		= True
+SMALLIFY		= False
 
 
 def FillConditionList():
@@ -125,7 +125,7 @@ def main():
 	#PrintList(positions)
 	cd = 1
 	for condition in CONDITIONS:
-		print("Processing condition ", cd, " out of ", len(CONDITIONS))
+		print("Processing condition " +str(cd) + " out of " + str(len(CONDITIONS)))
 		traj = MoveTargets2D(condition)
 		trajectories.append(traj)
 		cd += 1
