@@ -15,7 +15,7 @@ FREQUENCIES		= [1,2] + list(range(4, 64, 4))
 #FREQUENCIES		= [8, 16]
 SPEEDS			= [2.19]
 CONDITIONS		= [(2.19, 0, 1)]
-MODE			= "areas"
+MODE			= "speeds"
 
 def FillConditionList():
 	print(ANGLES, FREQUENCIES)
@@ -28,11 +28,21 @@ def AreaFillConditionList():
 	global ANGLES
 	global FREQUENCIES
 	global CONDITIONS
-	ANGLES		= [5, 15, 30, 45, 60, 90, 120, 180]
-	FREQUENCIES	= [1, 2, 4, 8, 16, 60]
+	ANGLES		= [1, 5, 15, 30, 45, 60, 90, 120, 180]
+	FREQUENCIES	= [1, 2, 4, 8, 16, 60, 120, 240]
 	CONDITIONS	= list()
 	FillConditionList()
 
+def SpeedFillConditionList():
+	global ANGLES
+	global FREQUENCIES
+	global CONDITIONS
+	global SPEEDS
+	ANGLES		= [120]
+	FREQUENCIES	= [2]
+	SPEEDS		= [2.19/8, 2.19/4, 2.19/2, 2.19, 2.19*2, 2.19*4]
+	CONDITIONS	= list()
+	FillConditionList()
 
 def PrintList(ml):
 	for elt in ml:
@@ -79,16 +89,40 @@ def FileNameFromCondition(condition):
 	speed		= str(speed)
 	angle		= str(angle)
 	frequency	= str(frequency)
-	speed = speed.replace('.', '') # removing the dot, so the remainder isn't treated as a file extension
+	speed = speed.replace('.', '_') # removing the dot, so the remainder isn't treated as a file extension
 	if MODE == "comp":
 		fname = "trajsForManuscript/" + speed + "_gen/synTraj_" + speed + "_" + angle + "_" + frequency + ".pdf"
 	elif MODE == "areas":
 		fname = "trajsForManuscript/areas/areaTraj_" + speed + "_" + angle + "_" + frequency + ".pdf"
+	elif MODE == "speeds":
+		fname = "trajsForManuscript/speeds/spTraj_" + speed + "_" + angle + "_" + frequency + ".pdf"
 	return(fname)
 
-def PlotPoints(positions, condition):
+def GetBounds(trajectories):
+	lxBound = float("inf")
+	lyBound = float("inf")
+	hxBound = -float("inf")
+	hyBound = -float("inf")
+
+	for traj in trajectories:
+		if min(traj[:,1]) < lxBound:
+			lxBound = min(traj[:,1])
+		if max(traj[:,1]) > hxBound:
+			hxBound = max(traj[:,1])
+
+		if min(traj[:,2]) < lyBound:
+			lyBound = min(traj[:,2])
+		if max(traj[:,2]) > hyBound:
+			hyBound = max(traj[:,2])
+	print(lxBound, hxBound, lyBound, hyBound)
+	margin = 2
+	return(lxBound - margin, hxBound + margin, lyBound - margin, hyBound + margin)
+
+
+def PlotPoints(positions, condition, bounds):
 	positions = np.array(positions)
-	plt.axis("equal")		# Same scale on both axes, or screwed up perception of angles
+	if MODE != "speeds":
+		plt.axis("equal")		# Same scale on both axes, or screwed up perception of angles
 	plt.plot(positions[:,0], positions[:,1], 'o')
 	if MODE == "areas":
 		hull = ConvexHull(positions)
@@ -101,8 +135,11 @@ def PlotPoints(positions, condition):
 				plt.plot(positions[simplex, 0], positions[simplex, 1], 'r-', linewidth = 5) # It puts a label on every line otherwise
 			plt.legend()
 			cnt += 1
-			#plt.figlegend((preturn), ("abdul"), "upper left")
-			#print(preturn)
+	if MODE == "speeds":
+		plt.axis( [	min(bounds[0], bounds[2]),
+		 			max(bounds[1], bounds[3]),
+					min(bounds[0], bounds[2]),
+					max(bounds[1], bounds[3]) ] ) # Very dirty, should detect bounds instead
 		#plt.show()
 	plt.savefig(FileNameFromCondition(condition), bbox_inches="tight")
 	plt.clf() # clears the plot so that I can create a new one from a clean basis
@@ -111,8 +148,9 @@ def main():
 	if MODE == "comp":
 		FillConditionList()
 	elif MODE == "areas":
-		print("ok")
 		AreaFillConditionList()
+	elif MODE == "speeds":
+		SpeedFillConditionList()
 
 	trajectories = list()
 	cd = 1
@@ -120,14 +158,15 @@ def main():
 		print("Processing condition ", cd, " out of ", len(CONDITIONS))
 		traj = MoveTargets2D(condition)
 		trajectories.append(traj)
-		PlotPoints(traj[:,1:], condition)
 		cd += 1
+	cd = 1
+	bounds = GetBounds(trajectories)
+	for cd in range(len(trajectories)):
+		print("Drawing condition ", cd, " out of ", len(CONDITIONS) - 1)
+		PlotPoints(trajectories[cd][:,1:], CONDITIONS[cd], bounds)
+
 	if MODE == "comp":
 		pickle.dump(trajectories, open("trajectories_for_manuscript.p", "wb")) # write binary
-	#PrintList(trajectories[0])
-	#PrintList(positions)
-	#hull = ConvexHull(positions[:,1:])
-
 
 
 if __name__ == "__main__":
