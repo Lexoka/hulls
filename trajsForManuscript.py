@@ -40,7 +40,7 @@ def SpeedFillConditionList():
 	global SPEEDS
 	ANGLES		= [120]
 	FREQUENCIES	= [2]
-	SPEEDS		= [2.19/8, 2.19/4, 2.19/2, 2.19, 2.19*2, 2.19*4]
+	SPEEDS		= [0.5, 1.0, 1.5, 2.0, 3.0, 4.0]
 	CONDITIONS	= list()
 	FillConditionList()
 
@@ -115,7 +115,7 @@ def GetBounds(trajectories):
 		if max(traj[:,2]) > hyBound:
 			hyBound = max(traj[:,2])
 	print(lxBound, hxBound, lyBound, hyBound)
-	margin = 2
+	margin = 1
 	return(lxBound - margin, hxBound + margin, lyBound - margin, hyBound + margin)
 
 
@@ -153,13 +153,12 @@ def main():
 		SpeedFillConditionList()
 
 	trajectories = list()
-	cd = 1
+	cd = 0
 	for condition in CONDITIONS:
-		print("Processing condition ", cd, " out of ", len(CONDITIONS))
+		print("Processing condition ", cd, " out of ", len(CONDITIONS) - 1)
 		traj = MoveTargets2D(condition)
 		trajectories.append(traj)
 		cd += 1
-	cd = 1
 	bounds = GetBounds(trajectories)
 	for cd in range(len(trajectories)):
 		print("Drawing condition ", cd, " out of ", len(CONDITIONS) - 1)
