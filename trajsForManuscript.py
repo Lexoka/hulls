@@ -13,7 +13,7 @@ ANGLES			= range(15, 181, 15)			# List of A. This goes 15, 30, 45, ..., 180
 FREQUENCIES		= [1,2] + list(range(4, 64, 4))	# List of F. This goes 1, 2, 4, 8, 12, 16, 20, ..., 60
 SPEEDS			= [2.19]						#
 CONDITIONS		= [(2.19, 0, 1)]				# It may be useful to have a condition with A = 0, just to get straight motion.
-MODE			= "speeds"						# Sets the mode. Different modes will generate different sets of pictures.
+MODE			= "autocorr"					# Sets the mode. Different modes will generate different sets of pictures.
 												# It's not very pretty and there probably should be a .config file and/or launch options instead.
 
 # Simply builds a condition list based on supplied lists of S, A and F.
@@ -31,6 +31,18 @@ def AreaFillConditionList():
 	global CONDITIONS
 	ANGLES		= [1, 5, 15, 30, 45, 60, 90, 120, 180]
 	FREQUENCIES	= [1, 2, 4, 8, 16, 60, 120, 240]
+	CONDITIONS	= []
+	FillConditionList()
+
+# Sets the appropriate parameters for the autocorr mode, the one that tries to make something that looks like autocorrelated motion
+def AutoCorrFillConditionList():
+	global ANGLES		# global keyword needed to overwrite this global variable
+	global FREQUENCIES
+	global SPEEDS
+	global CONDITIONS
+	ANGLES		= [1]
+	FREQUENCIES	= [60, 120]
+	SPEEDS		= [2.19]
 	CONDITIONS	= []
 	FillConditionList()
 
@@ -102,6 +114,8 @@ def FileNameFromCondition(condition):
 		fname = "trajsForManuscript/areas/areaTraj_" + speed + "_" + angle + "_" + frequency + ".pdf"
 	elif MODE == "speeds":
 		fname = "trajsForManuscript/speeds/spTraj_" + speed + "_" + angle + "_" + frequency + ".pdf"
+	elif MODE == "autocorr":
+		fname = "trajsForManuscript/autocorr/ac_" + speed + "_" + angle + "_" + frequency + ".pdf"
 	return(fname)
 
 # This returns the minimum and maximum Xs and Ys for all trajectories combined.
@@ -121,7 +135,7 @@ def GetBounds(trajectories):
 			lyBound = min(traj[:,2])
 		if max(traj[:,2]) > hyBound:
 			hyBound = max(traj[:,2])
-	print(lxBound, hxBound, lyBound, hyBound)
+	#print(lxBound, hxBound, lyBound, hyBound)
 	margin = 1
 	return(lxBound - margin, hxBound + margin, lyBound - margin, hyBound + margin)
 
@@ -165,6 +179,8 @@ def main():
 		AreaFillConditionList()
 	elif MODE == "speeds":
 		SpeedFillConditionList()
+	elif MODE == "autocorr":
+		AutoCorrFillConditionList()
 
 	# Empty list of trajectories for init.
 	trajectories = []
