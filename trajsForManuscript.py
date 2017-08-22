@@ -40,8 +40,8 @@ def AutoCorrFillConditionList():
 	global FREQUENCIES
 	global SPEEDS
 	global CONDITIONS
-	ANGLES		= [1]
-	FREQUENCIES	= [60, 120]
+	ANGLES		= [0.125, 0.25, 0.5, 1, 2]
+	FREQUENCIES	= [30, 60, 120, 240]
 	SPEEDS		= [2.19]
 	CONDITIONS	= []
 	FillConditionList()
