@@ -14,13 +14,13 @@ ANGLES			= range(15, 181, 15)			# List of A. This goes 15, 30, 45, ..., 180
 FREQUENCIES		= [1,2] + list(range(4, 64, 4))	# List of F. This goes 1, 2, 4, 8, 12, 16, 20, ..., 60
 SPEEDS			= [2.19]						#
 CONDITIONS		= [(2.19, 0, 1)]				# It may be useful to have a condition with A = 0, just to get straight motion.
-AVS_ITERATIONS	= 100							# Number of iterations in areaVspeed mode.
-MODE			= "areaVspeed"					# Sets the mode. Different modes will generate different sets of pictures.
+AVS_ITERATIONS	= 20							# Number of iterations in areaVspeed mode.
+MODE			= "metaAreaVSpeed"				# Sets the mode. Different modes will generate different sets of pictures.
 												# It's not very pretty and there probably should be a .config file and/or launch options instead.
 
 # Simply builds a condition list based on supplied lists of S, A and F.
 def FillConditionList():
-	print(ANGLES, FREQUENCIES)
+	#print(ANGLES, FREQUENCIES)
 	for speed in SPEEDS:
 		for angle in ANGLES:
 			for frequency in FREQUENCIES:
@@ -54,8 +54,8 @@ def SpeedFillConditionList():
 	global FREQUENCIES
 	global CONDITIONS
 	global SPEEDS
-	ANGLES		= [120]
-	FREQUENCIES	= [2]
+	ANGLES		= [60]
+	FREQUENCIES	= [8]
 	SPEEDS		= [0.5, 1.0, 1.5, 2.0, 3.0, 4.0]
 	CONDITIONS	= []
 	FillConditionList()
@@ -67,9 +67,9 @@ def AreaVSpeedConditionList():
 	global CONDITIONS
 	global SPEEDS
 	global END_OF_TIMES
-	ANGLES		= [120]
-	FREQUENCIES	= [8]
-	SPEEDS		= [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
+	ANGLES		= [10, 20, 30, 40, 50, 60, 90, 120, 180]
+	FREQUENCIES	= [4]
+	SPEEDS		= [0.125, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
 	CONDITIONS	= []
 	END_OF_TIMES= 5					# To keep things reasonably short; also probaly more relevant to humans
 	FillConditionList()
@@ -187,19 +187,40 @@ def PlotPoints(positions, condition, bounds):
 	plt.clf() # clears the plot so that I can create a new one from a clean basis
 
 
-def SaveAreaVSpeedResults(allMeansStds):
-	with open("areaVspeed.csv", "w") as outfile:
-		outfile.write("#Speed	Angle	Frequency	Area	Stdev\n")
+def SaveAreaVSpeedResults(allMeansStds, m, p):
+	s, a, f = CONDITIONS[0]
+	fname = "areaVspeed_" + str(a) + "_" + str(f) + ".csv"
+	fname = "areaVspeed_lots_of_angles.csv"
+	with open(fname, "w") as outfile:
+		outfile.write("#Speed	Angle	Frequency	Area	Stdev	m	p\n")
 		for i in range(len(CONDITIONS)):
 			s, a, f	= CONDITIONS[i]
 			ar, st	= allMeansStds[i]
-			outfile.write(str(s) + "\t" + str(a) + "\t" + str(f) + "\t" + str(ar) + "\t" + str(st) + "\n")
+			outfile.write(str(s) + "\t" + str(a) + "\t" + str(f) + "\t" + str(ar) + "\t" + str(st) + "\t" + str(m) + "\t" + str(p) + "\n")
+
+# Sets the appropriate parameters for the MetaAreaVspeed mode, the one that computes the areas of different trajectories
+# with different parameters.
+def MetaAreaVSpeedConditionList(angle, frequency):
+	global ANGLES
+	global FREQUENCIES
+	global CONDITIONS
+	global SPEEDS
+	global END_OF_TIMES
+	ANGLES		= [angle]
+	FREQUENCIES	= [frequency]
+	SPEEDS		= [0.125, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
+	CONDITIONS	= []
+	END_OF_TIMES= 5					# To keep things reasonably short; also probaly more relevant to humans
+	FillConditionList()
 
 def AreaVSpeedMain():
 	AreaVSpeedConditionList()
 	allAreas = []
 	allMeansStds = []
+	allMeans = []
+	allSpeeds = []
 	for condition in CONDITIONS:
+		s, a, f = condition
 		print(condition)
 		cdAreas = []
 		for i in range(AVS_ITERATIONS):
@@ -209,10 +230,54 @@ def AreaVSpeedMain():
 		allAreas.append(cdAreas)
 		meanAr = np.mean(cdAreas)
 		meanStd = np.std(cdAreas)
+		allMeans.append(meanAr)
 		allMeansStds.append((meanAr, meanStd))
+		allSpeeds.append(s)
 		#print(meanAr, meanStd)
 		#print()
-	SaveAreaVSpeedResults(allMeansStds)
+	m,p = np.polyfit(allSpeeds, allMeans, 1)
+	SaveAreaVSpeedResults(allMeansStds, m, p)
+	#print(np.linalg.lstsq(allSpeeds, allMeans))
+
+def SaveApprox(allApprox):
+	with open("linApprox.csv", "w") as outfile:
+		outfile.write("Angle	Frequency	m	p\n")
+		for line in allApprox:
+			a,f,m,p = line
+			outfile.write(str(a) + "\t" + str(f) + "\t" + str(m) + "\t" + str(p) + "\n")
+
+def MetaAreaVSpeed():
+	MY_ANGLES = [10,20,30,40,50,60,75,90,120,150,180]
+	MY_FREQUENCIES = [2,4,8,10,12,16,20]
+	allCoeffs = []
+	allIntercepts = []
+	allApprox = []
+	for frequency in MY_FREQUENCIES:
+		for angle in MY_ANGLES:
+			MetaAreaVSpeedConditionList(angle, frequency)
+			allAreas = []
+			allMeansStds = []
+			allMeans = []
+			allSpeeds = []
+			for condition in CONDITIONS:
+				s,a,f = condition
+				print(condition)
+				cdAreas = []
+				for i in range(AVS_ITERATIONS):
+					traj = MoveTargets2D(condition)
+					hull = ConvexHull(traj[:,1:])
+					cdAreas.append(hull.area)
+				allAreas.append(cdAreas)
+				meanAr = np.mean(cdAreas)
+				meanStd = np.std(cdAreas)
+				allMeans.append(meanAr)
+				allMeansStds.append((meanAr, meanStd))
+				allSpeeds.append(s)
+			m, p = np.polyfit(allSpeeds, allMeans, 1)
+			allCoeffs.append(m)
+			allIntercepts.append(p)
+			allApprox.append( (angle, frequency, m, p) )
+	SaveApprox(allApprox)
 
 
 
@@ -230,6 +295,9 @@ def main():
 	elif MODE == "areaVspeed":
 		AreaVSpeedMain()
 		sys.exit(0) # Too different from other modes, makes more sense to treat it this way
+	elif MODE == "metaAreaVSpeed":
+		MetaAreaVSpeed()
+		sys.exit(0)
 
 	# Empty list of trajectories for init.
 	trajectories = []
