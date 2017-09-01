@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import random
 import math
 import matplotlib
@@ -13,7 +14,8 @@ ANGLES			= range(15, 181, 15)			# List of A. This goes 15, 30, 45, ..., 180
 FREQUENCIES		= [1,2] + list(range(4, 64, 4))	# List of F. This goes 1, 2, 4, 8, 12, 16, 20, ..., 60
 SPEEDS			= [2.19]						#
 CONDITIONS		= [(2.19, 0, 1)]				# It may be useful to have a condition with A = 0, just to get straight motion.
-MODE			= "autocorr"					# Sets the mode. Different modes will generate different sets of pictures.
+AVS_ITERATIONS	= 100							# Number of iterations in areaVspeed mode.
+MODE			= "areaVspeed"					# Sets the mode. Different modes will generate different sets of pictures.
 												# It's not very pretty and there probably should be a .config file and/or launch options instead.
 
 # Simply builds a condition list based on supplied lists of S, A and F.
@@ -56,6 +58,20 @@ def SpeedFillConditionList():
 	FREQUENCIES	= [2]
 	SPEEDS		= [0.5, 1.0, 1.5, 2.0, 3.0, 4.0]
 	CONDITIONS	= []
+	FillConditionList()
+
+# Sets the appropriate parameters for the areaVspeed mode, the one that computes the areas of different trajectories at different speeds.
+def AreaVSpeedConditionList():
+	global ANGLES
+	global FREQUENCIES
+	global CONDITIONS
+	global SPEEDS
+	global END_OF_TIMES
+	ANGLES		= [120]
+	FREQUENCIES	= [8]
+	SPEEDS		= [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
+	CONDITIONS	= []
+	END_OF_TIMES= 5					# To keep things reasonably short; also probaly more relevant to humans
 	FillConditionList()
 
 def PrintList(ml):
@@ -171,6 +187,36 @@ def PlotPoints(positions, condition, bounds):
 	plt.clf() # clears the plot so that I can create a new one from a clean basis
 
 
+def SaveAreaVSpeedResults(allMeansStds):
+	with open("areaVspeed.csv", "w") as outfile:
+		outfile.write("#Speed	Angle	Frequency	Area	Stdev\n")
+		for i in range(len(CONDITIONS)):
+			s, a, f	= CONDITIONS[i]
+			ar, st	= allMeansStds[i]
+			outfile.write(str(s) + "\t" + str(a) + "\t" + str(f) + "\t" + str(ar) + "\t" + str(st) + "\n")
+
+def AreaVSpeedMain():
+	AreaVSpeedConditionList()
+	allAreas = []
+	allMeansStds = []
+	for condition in CONDITIONS:
+		print(condition)
+		cdAreas = []
+		for i in range(AVS_ITERATIONS):
+			traj = MoveTargets2D(condition)
+			hull = ConvexHull(traj[:,1:])
+			cdAreas.append(hull.area)
+		allAreas.append(cdAreas)
+		meanAr = np.mean(cdAreas)
+		meanStd = np.std(cdAreas)
+		allMeansStds.append((meanAr, meanStd))
+		#print(meanAr, meanStd)
+		#print()
+	SaveAreaVSpeedResults(allMeansStds)
+
+
+
+
 def main():
 	# First, set up the conditions as required by each mode, or rather by each purpose for which a mode is chosen.
 	if MODE == "comp":
@@ -181,6 +227,9 @@ def main():
 		SpeedFillConditionList()
 	elif MODE == "autocorr":
 		AutoCorrFillConditionList()
+	elif MODE == "areaVspeed":
+		AreaVSpeedMain()
+		sys.exit(0) # Too different from other modes, makes more sense to treat it this way
 
 	# Empty list of trajectories for init.
 	trajectories = []
