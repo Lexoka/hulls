@@ -198,20 +198,7 @@ def SaveAreaVSpeedResults(allMeansStds, m, p):
 			ar, st	= allMeansStds[i]
 			outfile.write(str(s) + "\t" + str(a) + "\t" + str(f) + "\t" + str(ar) + "\t" + str(st) + "\t" + str(m) + "\t" + str(p) + "\n")
 
-# Sets the appropriate parameters for the MetaAreaVspeed mode, the one that computes the areas of different trajectories
-# with different parameters.
-def MetaAreaVSpeedConditionList(angle, frequency):
-	global ANGLES
-	global FREQUENCIES
-	global CONDITIONS
-	global SPEEDS
-	global END_OF_TIMES
-	ANGLES		= [angle]
-	FREQUENCIES	= [frequency]
-	SPEEDS		= [0.125, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
-	CONDITIONS	= []
-	END_OF_TIMES= 5					# To keep things reasonably short; also probaly more relevant to humans
-	FillConditionList()
+
 
 def AreaVSpeedMain():
 	AreaVSpeedConditionList()
@@ -239,29 +226,52 @@ def AreaVSpeedMain():
 	SaveAreaVSpeedResults(allMeansStds, m, p)
 	#print(np.linalg.lstsq(allSpeeds, allMeans))
 
-def SaveApprox(allApprox):
+def SaveApprox(allApprox, MY_ANGLES):
 	with open("linApprox.csv", "w") as outfile:
 		outfile.write("Angle	Frequency	m	p\n")
 		for line in allApprox:
 			a,f,m,p = line
+			if a == MY_ANGLES[0]:
+				outfile.write("\n") # Blank line for gnuplot with pm3d
 			outfile.write(str(a) + "\t" + str(f) + "\t" + str(m) + "\t" + str(p) + "\n")
 
+# Sets the appropriate parameters for the MetaAreaVspeed mode, the one that computes the areas of different trajectories
+# with different parameters.
+def MetaAreaVSpeedConditionList(angle, frequency, MY_SPEEDS):
+	global ANGLES
+	global FREQUENCIES
+	global CONDITIONS
+	global SPEEDS
+	global END_OF_TIMES
+	global AVS_ITERATIONS
+	ANGLES			= [angle]
+	FREQUENCIES		= [frequency]
+	SPEEDS			= MY_SPEEDS
+	CONDITIONS		= []
+	AVS_ITERATIONS	= 50
+	END_OF_TIMES	= 5					# To keep things reasonably short; also probaly more relevant to humans
+	FillConditionList()
+
 def MetaAreaVSpeed():
-	MY_ANGLES = [10,20,30,40,50,60,75,90,120,150,180]
-	MY_FREQUENCIES = [2,4,8,10,12,16,20]
+	MY_ANGLES		= [1,2,4,8,16,24,32,40,48,56,64,72,80,96,112,128,144,160,180]
+	MY_FREQUENCIES	= [0.5,1,2,4,6,8,10,12,16,20,24,32,40,48,56,64,80,96,112,128,160,192,224,256]
+	MY_SPEEDS		= [0.125, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
 	allCoeffs = []
 	allIntercepts = []
 	allApprox = []
+	nbConds = len(MY_FREQUENCIES) * len(MY_ANGLES) * len(MY_SPEEDS)
+	cdi = 1
 	for frequency in MY_FREQUENCIES:
 		for angle in MY_ANGLES:
-			MetaAreaVSpeedConditionList(angle, frequency)
+			MetaAreaVSpeedConditionList(angle, frequency, MY_SPEEDS)
 			allAreas = []
 			allMeansStds = []
 			allMeans = []
 			allSpeeds = []
 			for condition in CONDITIONS:
+				print("Condtition " + str(cdi) + " out of " + str(nbConds))
 				s,a,f = condition
-				print(condition)
+				#print(condition)
 				cdAreas = []
 				for i in range(AVS_ITERATIONS):
 					traj = MoveTargets2D(condition)
@@ -273,11 +283,12 @@ def MetaAreaVSpeed():
 				allMeans.append(meanAr)
 				allMeansStds.append((meanAr, meanStd))
 				allSpeeds.append(s)
+				cdi = cdi + 1
 			m, p = np.polyfit(allSpeeds, allMeans, 1)
 			allCoeffs.append(m)
 			allIntercepts.append(p)
 			allApprox.append( (angle, frequency, m, p) )
-	SaveApprox(allApprox)
+	SaveApprox(allApprox, MY_ANGLES)
 
 
 
