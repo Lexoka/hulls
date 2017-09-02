@@ -248,13 +248,13 @@ def MetaAreaVSpeedConditionList(angle, frequency, MY_SPEEDS):
 	FREQUENCIES		= [frequency]
 	SPEEDS			= MY_SPEEDS
 	CONDITIONS		= []
-	AVS_ITERATIONS	= 50
+	AVS_ITERATIONS	= 100
 	END_OF_TIMES	= 5					# To keep things reasonably short; also probaly more relevant to humans
 	FillConditionList()
 
 def MetaAreaVSpeed():
-	MY_ANGLES		= [1,2,4,8,16,24,32,40,48,56,64,72,80,96,112,128,144,160,180]
-	MY_FREQUENCIES	= [0.5,1,2,4,6,8,10,12,16,20,24,32,40,48,56,64,80,96,112,128,160,192,224,256]
+	MY_ANGLES		= [0.5,1,2,4,8,16,24,32,40,48,56,64,72,80,96,112,128,144,160,180]
+	MY_FREQUENCIES	= [0.5,1,2,4,6,8,10,12,16,20,24,32,40,48,56,64,80,96,112,128,160,192,224,256,320,384,512]
 	MY_SPEEDS		= [0.125, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0]
 	allCoeffs = []
 	allIntercepts = []
