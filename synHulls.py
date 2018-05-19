@@ -38,21 +38,6 @@ def RotateDirections2D(tDir, angleBound):
 	tDir[1] = dx*sina + dy*cosa
 	return(tDir)
 
-"""
-void PeriodicRotateDirections2D(float* directions) {
-	float angle, dx, dy, cosa, sina;
-	for(int i=0; i<CHOSEN_NB_TARGETS_2D; ++i) {
-		// The angle should end up between range min and max.
-		angle = RANGE_MIN + static_cast <float> (rand()) / (static_cast <float> ( RAND_MAX/(RANGE_MAX-RANGE_MIN) ) );
-		dx = directions[3*i];
-		dy = directions[3*i + 1];
-		cosa = cos(angle);
-		sina = sin(angle);
-		directions[3*i]     = dx*cosa - dy*sina;
-		directions[3*i + 1] = dx*sina + dy*cosa;
-	}
-}
-"""
 
 def MoveTargets2D(condition):
 	#positions = list()
